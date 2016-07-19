@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xmlns:jdbc="http://www.springframework.org/schema/jdbc"
+	xmlns:tx="http://www.springframework.org/schema/tx"
+	xmlns:aop="http://www.springframework.org/schema/aop"
+	xsi:schemaLocation="http://www.springframework.org/schema/jdbc http://www.springframework.org/schema/jdbc/spring-jdbc-4.2.xsd
+		http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd
+		http://www.springframework.org/schema/aop http://www.springframework.org/schema/aop/spring-aop-4.2.xsd
+		http://www.springframework.org/schema/tx http://www.springframework.org/schema/tx/spring-tx-4.2.xsd">
+
+	<jdbc:embedded-database id="dataSource" type="HSQL">
+		<jdbc:script location="classpath:/META-INF/db/schema.sql"/>
+		<jdbc:script location="classpath:/META-INF/db/data.sql"/>
+	</jdbc:embedded-database>
+
+	<bean id="c" class="sample.mybatis.ContactFactoryBean"></bean>
+	<!-- 
+		SqlSessionFactoryBean을 빈으로 등록하면
+		SqlSessionFactory객체가 빈으로 등록된다.
+	 -->
+	<bean id="sqlSessionFactory" class="org.mybatis.spring.SqlSessionFactoryBean">
+		<property name="dataSource" ref="dataSource" />
+		<property name="mapperLocations" value="classpath:/sample/mybatis/contact.xml"/>
+	</bean>
+	
+	<!-- 
+		MapperScannerConfigurer은
+		basePackage로 지정된 패키지 경로에서 시작해서 하위의 패키지에서
+		모든 Mapper 인터페이스를 스캔한다.
+		스캔된 Mapper 인터페이스는 MapperFactoryBean으로 등록된다.
+		
+		Mapper 인터페이스와 mapper.xml을 이용해서 
+		Mapper 인터페이스의 구현 객체(Mapper객체)를 스프링의 빈으로 등록한다.
+	 -->
+	<bean class="org.mybatis.spring.mapper.MapperScannerConfigurer">
+		<property name="basePackage" value="sample.mybatis"></property>
+		<property name="sqlSessionFactoryBeanName" value="sqlSessionFactory"></property>
+	</bean>
+	
+	<bean id="transactionManager" class="org.springframework.jdbc.datasource.DataSourceTransactionManager">
+		<property name="dataSource" ref="dataSource"/>
+	</bean>
+	
+	<!-- <tx:annotation-driven/> 방법 1. Annotaion-Driven 사용 -->
+	
+	<!-- 
+		방법2. AOP를 사용하기
+		AOP Configuration를 활용한 트랜잭션 처리
+	 -->
+	<tx:advice id="tx" transaction-manager="transactionManager">
+		<tx:attributes>
+			<tx:method name="*" propagation="REQUIRED" isolation="DEFAULT" /><!-- 트랜잭션 전파 규칙 : REQUIRED -->
+			<tx:method name="get*" read-only="true"/>
+			<tx:method name="find*" read-only="true"/>
+			<tx:method name="search*" read-only="true"/>
+		</tx:attributes>
+	</tx:advice>
+	
+	<aop:config>
+		<aop:pointcut expression="within(sample.mybatis.*Service)" id="txpointcut"/>
+		<aop:advisor advice-ref="tx" pointcut-ref="txpointcut"/>
+	</aop:config>
+	
+</beans>

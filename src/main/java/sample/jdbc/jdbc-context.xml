@@ -1,0 +1,67 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xmlns:jdbc="http://www.springframework.org/schema/jdbc"
+	xmlns:jee="http://www.springframework.org/schema/jee"
+	xmlns:tx="http://www.springframework.org/schema/tx"
+	xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd
+		http://www.springframework.org/schema/jdbc http://www.springframework.org/schema/jdbc/spring-jdbc-4.2.xsd
+		http://www.springframework.org/schema/jee http://www.springframework.org/schema/jee/spring-jee-4.2.xsd
+		http://www.springframework.org/schema/tx http://www.springframework.org/schema/tx/spring-tx-4.2.xsd">
+
+	<!-- 
+		<jee:jndi-lookup>은 WAS가 JNDI에 등록한 Connection Pool을 Spring의 빈으로 등록할 때 사용하는 태그다.
+		
+		id="빈의 식별자"
+		jndi-name="jndi에 등록된 이름"
+		resource-ref="true"
+			jndi 이름의 접두사(java:comp/env/)를 생략할 수 있다.
+	 -->
+	<!-- 
+	<jee:jndi-lookup id="dataSource" jndi-name="jdbc/myDB"
+		resource-ref="true"/>
+	 --> 
+	
+	<!-- 
+		임베디드 데이터 소스 설정하기
+	 -->
+	<jdbc:embedded-database id="dataSource" type="HSQL">
+		<jdbc:script location="classpath:/META-INF/db/schema.sql"/>
+		<jdbc:script location="classpath:/META-INF/db/data.sql"/>
+	</jdbc:embedded-database>
+
+	<!-- 
+		트랜잭션 Bean 매니저 등록
+	 -->
+	<bean id="transactionManager" class="org.springframework.jdbc.datasource.DataSourceTransactionManager">
+		<property name="dataSource" ref="dataSource"/>
+	</bean>
+	
+	<!-- 
+		@Annotaion 기반의  트랜잭션 서비스를 제공하도록 지원하는 빈 등록
+		
+		인터페이스, 클래스, 메서드에 @Transactional Annotation을 사용할 수 있다.
+	 -->
+	<tx:annotation-driven/>
+
+	<!-- 
+		JDBC를 활용한 DB Access작업이 템플릿화 되어 있는 JdbcTemplate 빈으로 등록하기
+	 -->
+	<bean id="jdbcTemplate" class="org.springframework.jdbc.core.JdbcTemplate">
+		<property name="dataSource" ref="dataSource"/>
+	</bean>
+	
+	<!-- 
+		ContactDao 인터페이스의 구현클래스(ContactDaoJdbc)를 스프링의 빈으로 등록하기
+	 -->
+	<bean id="dao" class="sample.jdbc.ContactDaoJdbc">
+		<property name="template" ref="jdbcTemplate"/>
+	</bean>
+	
+	<!-- 
+		ContactService 인터페이스의 구현클래스(ContactServiceImpl)를 스프링의 빈으로 등록하기
+	 -->
+	<bean id="service" class="sample.jdbc.ContactServiceImpl">
+		<property name="contactDao" ref="dao" />
+	</bean>
+</beans>

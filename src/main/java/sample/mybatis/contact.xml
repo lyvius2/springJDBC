@@ -1,0 +1,75 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<!-- 
+	mapper의 namespace에는 mapper interface의 전체 경로를 적는다.
+	
+	context.xml과 ContactRepository.java가
+	서로 mapper file(SQL정의)과 mapper interface(기능명세)관계가 있음을 설정한다.
+ -->  
+<mapper namespace="sample.mybatis.ContactRepository">
+
+	<!-- 
+	void addContact(Contact c);
+	void deleteAll();
+	void deleteByNo(int no);
+	void update(Contact c);
+	List<Contact> selectAll();
+	Contact selectByNo(int no);
+	 -->
+	
+	<insert id="addContact" parameterType="sample.jdbc.Contact">
+		insert into tb_contact
+		(contact_no, contact_name, contact_phone, contact_email,
+		 contact_addr, contact_regdate)
+		values 
+		(#{no}, #{name}, #{phone}, #{email}, #{addr}, #{regdate})
+	</insert>
+	
+	<delete id="deleteAll">
+		delete from tb_contact
+	</delete>
+	
+	<delete id="deleteByNo" parameterType="int">
+		delete from tb_contact where contact_no = #{value}
+	</delete>
+	
+	<update id="update" parameterType="sample.jdbc.Contact">
+		update tb_contact
+		set 
+			contact_name = #{name},
+			contact_phone = #{phone},
+			contact_email = #{email},
+			contact_addr = #{addr}
+		where
+			contact_no = #{no}
+	</update>
+	
+	<select id="selectAll" resultType="sample.jdbc.Contact">
+		select 
+			contact_no as no,
+			contact_name as name,
+			contact_phone as phone,
+			contact_email as email,
+			contact_addr as addr,
+			contact_regdate as regdate
+		from 
+			tb_contact
+	</select>
+	
+	<select id="selectByNo" parameterType="int" resultType="sample.jdbc.Contact">
+		select 
+			contact_no as no,
+			contact_name as name,
+			contact_phone as phone,
+			contact_email as email,
+			contact_addr as addr,
+			contact_regdate as regdate
+		from 
+			tb_contact
+		where 
+			no = #{no}
+	</select> 
+</mapper>
